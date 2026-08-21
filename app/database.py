@@ -1,9 +1,51 @@
-"""Database connection, initialization, and user lookup module for Piazza-Lite."""
+"""Database connection, initialization, and authentication module for Piazza-Lite."""
 
+import hashlib
+import logging
 import os
+import secrets
 import sqlite3
+import unicodedata
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Generator, Optional
+
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
+
+logger = logging.getLogger("piazza-lite.database")
+
+# Argon2 Password Hasher matching BambooChat configuration
+_PASSWORD_HASHER = PasswordHasher(
+    time_cost=2,
+    memory_cost=19456,
+    parallelism=1,
+)
+
+SESSION_LIFETIME_HOURS = 12
+
+
+def normalize_username(username: str) -> str:
+    """Normalize username exactly like BambooChat using NFKC and casefold."""
+    return unicodedata.normalize("NFKC", username).strip().casefold()
+
+
+def verify_password(stored_hash: str, supplied_password: str) -> bool:
+    """Verify password against stored Argon2id hash without exposing details."""
+    if not stored_hash or not supplied_password:
+        return False
+    try:
+        return _PASSWORD_HASHER.verify(stored_hash, supplied_password)
+    except (InvalidHashError, VerificationError, VerifyMismatchError):
+        return False
+    except Exception as e:
+        logger.warning(f"Unexpected password verification exception: {type(e).__name__}")
+        return False
+
+
+def hash_session_token(raw_token: str) -> str:
+    """Compute SHA-256 hex digest of raw session token."""
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
 def get_db_path() -> str:
@@ -16,12 +58,7 @@ def get_db_path() -> str:
 
 
 def verify_db_exists(db_path: Optional[str] = None) -> str:
-    """Verify that the database file exists and contains the required users table.
-    
-    Raises:
-        FileNotFoundError: If the database file does not exist.
-        RuntimeError: If the database exists but lacks a users table.
-    """
+    """Verify that the database file exists and contains the required users table."""
     path = db_path or get_db_path()
     if not os.path.exists(path):
         raise FileNotFoundError(
@@ -57,7 +94,7 @@ def get_db_connection(db_path: Optional[str] = None) -> Generator[sqlite3.Connec
 
 
 def init_db(db_path: Optional[str] = None) -> None:
-    """Initialize WAL mode and ensure Piazza-Lite tables exist without modifying users table."""
+    """Initialize WAL mode and ensure Piazza-Lite tables exist without modifying chat tables."""
     path = verify_db_exists(db_path)
 
     with get_db_connection(path) as conn:
@@ -92,36 +129,124 @@ def init_db(db_path: Optional[str] = None) -> None:
         );
         """)
 
+        # Create Piazza-Lite sessions table
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS piazza_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token_hash TEXT NOT NULL UNIQUE,
+            user_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        """)
+
         # Indexes for query performance
         conn.execute("CREATE INDEX IF NOT EXISTS idx_questions_created_at ON questions(created_at);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_answers_question_id ON answers(question_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_piazza_sessions_expires_at ON piazza_sessions(expires_at);")
 
         conn.commit()
 
 
-def resolve_user_id(conn: sqlite3.Connection, nickname: str) -> Optional[int]:
-    """Look up an existing user by nickname / normalized_username / display_name.
-    
-    Returns the user id if found, or None. Strictly read-only; no new users are inserted.
-    """
-    clean_name = nickname.strip()
-    if not clean_name:
+def authenticate_user(conn: sqlite3.Connection, username: str, password: str) -> Optional[dict]:
+    """Authenticate user against shared users table. Returns safe user dict if valid and active."""
+    if not username or not password:
         return None
 
-    normalized = clean_name.lower()
+    clean_username = normalize_username(username)
     cursor = conn.cursor()
     cursor.execute(
         """
-        SELECT id FROM users
+        SELECT id, username, display_name, role, active, password_hash
+        FROM users
         WHERE normalized_username = ?
-           OR username = ?
-           OR display_name = ?
-        ORDER BY id ASC
-        LIMIT 1
         """,
-        (normalized, clean_name, clean_name),
+        (clean_username,),
     )
     row = cursor.fetchone()
-    if row:
-        return int(row["id"])
-    return None
+    if not row:
+        return None
+
+    # Check password
+    if not verify_password(row["password_hash"], password):
+        return None
+
+    # Check active status
+    if int(row["active"]) != 1:
+        return None
+
+    display = (row["display_name"] or "").strip() or row["username"]
+    return {
+        "id": int(row["id"]),
+        "username": row["username"],
+        "display_name": display,
+        "role": row["role"],
+    }
+
+
+def create_piazza_session(conn: sqlite3.Connection, user_id: int) -> str:
+    """Create a new 12-hour session for user. Returns raw opaque token."""
+    delete_expired_piazza_sessions(conn)
+    raw_token = secrets.token_urlsafe(32)
+    token_h = hash_session_token(raw_token)
+    now = datetime.now(timezone.utc)
+    expires_at = (now + timedelta(hours=SESSION_LIFETIME_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_str = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO piazza_sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
+        (token_h, user_id, now_str, expires_at),
+    )
+    conn.commit()
+    return raw_token
+
+
+def get_piazza_session_user(conn: sqlite3.Connection, raw_token: str) -> Optional[dict]:
+    """Retrieve authenticated safe user from raw session cookie."""
+    if not raw_token or not raw_token.strip():
+        return None
+    token_h = hash_session_token(raw_token.strip())
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT u.id, u.username, u.display_name, u.role, u.active
+        FROM piazza_sessions s
+        JOIN users u ON s.user_id = u.id
+        WHERE s.token_hash = ? AND s.expires_at > ? AND u.active = 1
+        """,
+        (token_h, now_str),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return None
+
+    display = (row["display_name"] or "").strip() or row["username"]
+    return {
+        "id": int(row["id"]),
+        "username": row["username"],
+        "display_name": display,
+        "role": row["role"],
+    }
+
+
+def delete_piazza_session(conn: sqlite3.Connection, raw_token: str) -> None:
+    """Delete session by raw token."""
+    if not raw_token or not raw_token.strip():
+        return
+    token_h = hash_session_token(raw_token.strip())
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM piazza_sessions WHERE token_hash = ?", (token_h,))
+    conn.commit()
+
+
+def delete_expired_piazza_sessions(conn: sqlite3.Connection) -> int:
+    """Prune expired sessions."""
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM piazza_sessions WHERE expires_at <= ?", (now_str,))
+    conn.commit()
+    return cursor.rowcount
