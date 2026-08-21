@@ -2,67 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piazza-lite | 질문 작성</title>
-    <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/ask.css">
+    <title>Piazza-Lite | 리다이렉트 중...</title>
+    <meta http-equiv="refresh" content="0; url=/?compose=question">
+    <script>
+        window.location.replace("/?compose=question");
+    </script>
 </head>
 <body>
-
-    <header class="header">
-        <div class="header-inner">
-            <a href="index.html" class="logo">Piazza-lite</a>
-            <a href="index.html" class="header-nav-link">← 목록으로 돌아가기</a>
-        </div>
-    </header>
-
-    <main class="container">
-        <div class="ask-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 class="ask-title">새 질문 작성</h2>
-                <span id="authorDisplay" style="font-size: 13px; color: var(--piazza-muted); font-weight: 500;"></span>
-            </div>
-            <hr style="border: 0; border-top: 1px solid var(--piazza-border); margin: 16px 0 24px;">
-
-            <form id="questionForm">
-                <!-- Title -->
-                <div class="form-group">
-                    <label for="title">질문 제목</label>
-                    <input type="text" id="title" name="title" class="input-field" placeholder="질문 핵심 내용을 요약해주세요">
-                </div>
-
-                <!-- Tag -->
-                <div class="form-group">
-                    <label for="tag">카테고리 태그</label>
-                    <select id="tag" name="tag" class="input-field">
-                        <option value="Python">Python</option>
-                        <option value="Arduino">Arduino</option>
-                        <option value="Network">Network</option>
-                        <option value="PLC">PLC</option>
-                        <option value="FastAPI">FastAPI</option>
-                        <option value="Docker">Docker</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-
-                <!-- Question Body -->
-                <div class="form-group">
-                    <label for="body">질문 상세 내용</label>
-                    <textarea id="body" name="body" rows="10" class="input-field" placeholder="시도해본 코드, 발생한 오류 메시지, 문제 상황을 상세히 적어주세요"></textarea>
-                </div>
-
-                <!-- Error Message -->
-                <p id="message" class="form-message"></p>
-
-                <div class="form-actions">
-                    <a href="index.html" class="btn" style="background-color: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db;">취소</a>
-                    <button type="submit" id="submitBtn" class="btn btn-primary">질문 등록</button>
-                </div>
-            </form>
-        </div>
-    </main>
-
-    <script src="js/auth.js"></script>
-    <script src="js/ask.js"></script>
+    <p>질문 작성 페이지로 이동 중입니다... <a href="/?compose=question">여기를 클릭하세요</a></p>
 </body>
 </html>
