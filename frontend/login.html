@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piazza-lite | 로그인</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-inner">
+            <h1 class="logo">Piazza-lite</h1>
+            <span style="color: #ffffff; font-size: 13px; opacity: 0.9;">Classroom Q&A Forum</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="login-card">
+            <h2 class="login-title">BambooChat 계정으로 로그인</h2>
+            <p class="login-desc">BambooChat 채팅 앱에서 사용하는 아이디와 비밀번호를 입력해주세요.</p>
+            <hr style="border: 0; border-top: 1px solid var(--piazza-border); margin: 16px 0 24px;">
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">아이디 (Username)</label>
+                    <input type="text" id="username" name="username" class="input-field" placeholder="아이디를 입력하세요" autocomplete="username" autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">비밀번호 (Password)</label>
+                    <input type="password" id="password" name="password" class="input-field" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+                </div>
+
+                <p id="errorMessage" class="error-message"></p>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; height: 40px; font-size: 14px;">
+                        로그인
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>

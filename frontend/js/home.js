@@ -11,9 +11,6 @@ const searchForm = document.querySelector("#searchForm");
 const searchInput = document.querySelector("#searchInput");
 const askButton = document.querySelector("#askButton");
 
-// 초기 가이드 메시지 HTML 캐싱
-const initialDetailHtml = postDetail ? postDetail.innerHTML : "";
-
 // =========================
 // 질문 목록 불러오기 (실제 백엔드 API 연동)
 // =========================
@@ -25,6 +22,11 @@ async function loadQuestions(search = "") {
         }
 
         const response = await fetch(url);
+        if (response.status === 401) {
+            redirectToLogin();
+            return;
+        }
+
         if (!response.ok) {
             throw new Error("질문 목록을 불러오지 못했습니다.");
         }
@@ -127,6 +129,11 @@ async function showDetail(questionId) {
 
     try {
         const response = await fetch(`/api/questions/${questionId}`);
+        if (response.status === 401) {
+            redirectToLogin();
+            return;
+        }
+
         if (!response.ok) {
             throw new Error("질문 정보를 불러오지 못했습니다.");
         }
@@ -212,16 +219,10 @@ function showError(msg) {
     }
 }
 
-function escapeHtml(text) {
-    if (!text) return "";
-    return String(text).replace(/[&<>"']/g, m => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    }[m]));
-}
-
-// 페이지 로드 시 실행
-loadQuestions();
+// 초기화: 인증 상태 확인 후 질문 목록 로드
+document.addEventListener("DOMContentLoaded", async () => {
+    const user = await requireCurrentUser();
+    if (user) {
+        loadQuestions();
+    }
+});

@@ -39,13 +39,11 @@
 
                 <!-- 답변 작성 폼 -->
                 <section class="reply-card" id="answer-form-section">
-                    <h3 class="section-title">내 답변 작성</h3>
-                    <div class="form-group" style="margin-bottom: 12px;">
-                        <label for="author" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">작성자 닉네임</label>
-                        <input type="text" id="author" class="input-field" placeholder="BambooChat에 등록된 닉네임">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 class="section-title" style="margin: 0;">내 답변 작성</h3>
+                        <span id="answerAuthorDisplay" style="font-size: 13px; color: var(--piazza-muted); font-weight: 500;"></span>
                     </div>
                     <div class="form-group" style="margin-bottom: 16px;">
-                        <label for="answer-body" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">답변 내용</label>
                         <textarea id="answer-body" class="input-field" rows="6" placeholder="해결 방법 및 코드 설명을 입력하세요"></textarea>
                     </div>
                     <div style="display: flex; justify-content: flex-end;">
@@ -56,6 +54,7 @@
         </div>
     </main>
 
+    <script src="js/auth.js"></script>
     <script src="js/question.js"></script>
 </body>
 </html>
