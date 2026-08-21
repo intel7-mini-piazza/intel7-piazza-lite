@@ -5,17 +5,35 @@ is idempotent and will not create duplicate questions or answers.
 """
 
 import os
+import sqlite3
 import sys
 from datetime import datetime, timezone
+from typing import Optional
 
 # Add workspace to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.database import get_db_connection, init_db, resolve_user_id
+from app.database import get_db_connection, init_db, normalize_username
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def resolve_seed_user_id(conn: sqlite3.Connection, identifier: str) -> Optional[int]:
+    """Internal helper for seeder to map author handle to existing chat user ID."""
+    clean = normalize_username(identifier)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT id FROM users
+        WHERE normalized_username = ? OR username = TRIM(?) OR display_name = TRIM(?)
+        LIMIT 1;
+        """,
+        (clean, identifier, identifier),
+    )
+    row = cursor.fetchone()
+    return int(row["id"]) if row else None
 
 
 SEED_QUESTIONS = [
@@ -176,7 +194,7 @@ def seed_database():
                 # Already exists, skip
                 continue
 
-            user_id = resolve_user_id(conn, item["author"])
+            user_id = resolve_seed_user_id(conn, item["author"])
             if not user_id:
                 # Fallback to first user in database
                 user_id = users[0]["id"]
@@ -194,7 +212,7 @@ def seed_database():
 
             accepted_ans_id = None
             for ans in item["answers"]:
-                ans_user_id = resolve_user_id(conn, ans["author"]) or users[0]["id"]
+                ans_user_id = resolve_seed_user_id(conn, ans["author"]) or users[0]["id"]
                 cursor.execute(
                     """
                     INSERT INTO answers (question_id, user_id, body, created_at)
