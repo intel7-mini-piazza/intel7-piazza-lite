@@ -1,0 +1,4 @@
+.meta-info { color: #666; font-size: 14px; margin-bottom: 15px; }
+#question-body { padding: 15px; background-color: #f9f9f9; border-radius: 6px; }
+.answer-item { padding: 15px; border-bottom: 1px solid #eee; }
+.accepted-badge { background-color: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
