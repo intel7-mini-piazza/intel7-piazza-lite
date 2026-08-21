@@ -20,7 +20,7 @@ Piazza-Lite is a classroom Q&A and knowledge-sharing forum backend and web appli
 
 ---
 
-## 1. Quickstart & Setup (Windows PowerShell)
+## 1. Quickstart & Setup with `uv` (Windows PowerShell)
 
 ### Prerequisites
 * Python 3.12+ (or Python 3.14)
@@ -32,14 +32,8 @@ Piazza-Lite is a classroom Q&A and knowledge-sharing forum backend and web appli
 # 1. Clone or navigate to the project directory
 cd E:\_se4nchoi\intel7-piazza-lite
 
-# 2. Create virtual environment using uv
-uv venv
-
-# 3. Activate virtual environment
-.\.venv\Scripts\Activate.ps1
-
-# 4. Install dependencies
-uv pip install -r requirements.txt
+# 2. Synchronize virtual environment and dependencies using uv
+uv sync
 ```
 
 ---
@@ -53,7 +47,7 @@ uv pip install -r requirements.txt
 $env:CLASSROOM_DB_PATH = "E:\_se4nchoi\BambooChatData\chat.db"
 
 # Start the integrated FastAPI server on 0.0.0.0 (Accessible across classroom LAN)
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8100
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8100
 ```
 
 * **Web Application**: [http://127.0.0.1:8100/](http://127.0.0.1:8100/)
@@ -70,7 +64,7 @@ To populate the forum with ~10 realistic questions (Arduino, FastAPI, Docker, Py
 
 ```powershell
 $env:CLASSROOM_DB_PATH = "E:\_se4nchoi\BambooChatData\chat.db"
-python scripts/seed.py
+uv run python scripts/seed.py
 ```
 
 *The seed script is idempotent and resolves existing chat user accounts internally.*
@@ -83,14 +77,14 @@ Verify health check, unauthenticated rejection (401), login sessions, question &
 
 ```powershell
 # Unauthenticated & public endpoint checks:
-python scripts/smoke_test.py
+uv run python scripts/smoke_test.py
 
 # Full end-to-end authenticated testing with test credentials:
 $env:PIAZZA_TEST_USERNAME = "your_username"
 $env:PIAZZA_TEST_PASSWORD = "your_password"
 $env:PIAZZA_TEST_OTHER_USERNAME = "other_username"
 $env:PIAZZA_TEST_OTHER_PASSWORD = "other_password"
-python scripts/smoke_test.py
+uv run python scripts/smoke_test.py
 ```
 
 ---
@@ -117,3 +111,54 @@ python scripts/smoke_test.py
 | `POST` | `/api/questions/{id}/accept/{answer_id}` | Yes | Accept answer (Question Owner only) |
 
 For full schemas and examples, refer to [`FRONTEND_HANDOFF.md`](./FRONTEND_HANDOFF.md).
+
+---
+
+## 6. Project Structure
+
+```text
+intel7-piazza-lite/
+├── app/
+│   ├── __init__.py
+│   ├── main.py            # FastAPI entrypoint, static frontend mounting, CORS
+│   ├── database.py        # SQLite connection, WAL init, Argon2 auth, sessions
+│   ├── schemas.py         # Pydantic contract models & auth schemas
+│   └── routes.py          # API route handlers & get_current_user dependency
+├── frontend/
+│   ├── index.html         # Home / Search page
+│   ├── login.html         # Login page
+│   ├── ask.html           # Ask Question page
+│   ├── question.html      # Question detail & answers discussion page
+│   ├── css/
+│   │   ├── common.css     # Shared design tokens & base stylesheet
+│   │   ├── home.css       # Home/Feed stylesheet
+│   │   ├── login.css      # Login page stylesheet
+│   │   ├── ask.css        # Ask Question stylesheet
+│   │   └── question.css   # Question page stylesheet
+│   └── js/
+│       ├── auth.js        # Shared auth helper & session verification
+│       ├── login.js       # Login submission & safe redirect handling
+│       ├── home.js        # Home listing & debounced search logic
+│       ├── ask.js         # Question submission logic
+│       └── question.js    # Detail rendering, answer posting, solution acceptance
+├── docs/
+│   ├── frontend_b_home_search_ko.md
+│   ├── frontend_d_question_detail_ko.md
+│   └── question-page-guide.md
+├── scripts/
+│   ├── seed.py            # Idempotent classroom seed generator
+│   └── smoke_test.py      # E2E automated smoke test suite
+├── src/
+│   └── intel7_piazza_lite/
+│       └── __init__.py    # CLI entrypoint
+├── data/
+│   └── .gitkeep           # Local fallback folder
+├── pyproject.toml         # UV project configuration & dependencies
+├── uv.lock                # UV deterministic dependency lockfile
+├── requirements.txt       # Standard requirements definition
+├── .python-version        # Python version specification
+├── .env.example           # Environment template
+├── .gitignore             # Standard Python gitignore
+├── FRONTEND_HANDOFF.md    # Frontend specifications & auth contract
+└── README.md              # Project runbook
+```
