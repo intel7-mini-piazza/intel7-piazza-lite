@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Piazza-lite</title>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="header-inner">
+            <h1 class="logo">Piazza-lite</h1>
+
+            <button id="askButton" class="ask-button">
+                질문하기
+            </button>
+        </div>
+    </header>
+
+
+    <main class="container">
+
+        <!-- 검색 영역 -->
+        <section class="search-section">
+            <form id="searchForm" class="search-form">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="질문 검색..."
+                    autocomplete="off"
+                >
+
+                <button type="submit" class="search-button">
+                    검색
+                </button>
+            </form>
+        </section>
+
+
+        <!-- 질문 목록 -->
+        <section class="question-section">
+
+            <div class="section-header">
+                <h2>질문 목록</h2>
+            </div>
+
+            <div id="questionList" class="question-list">
+                <!-- JavaScript가 질문 카드를 여기에 넣습니다. -->
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="home.js"></script>
+
+</body>
+</html>
