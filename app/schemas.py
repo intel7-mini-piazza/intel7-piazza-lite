@@ -1,12 +1,18 @@
 """Pydantic schemas and contract models for Piazza-Lite."""
 
 from typing import List, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 
 class QuestionCreate(BaseModel):
-    """Payload for creating a new question."""
-    author: str = Field(..., min_length=1, max_length=50, description="Nickname of existing chat user")
+    """Payload for creating a new question. Accepts 'author' or 'nickname'."""
+    author: str = Field(
+        ...,
+        validation_alias=AliasChoices("author", "nickname"),
+        min_length=1,
+        max_length=50,
+        description="Nickname of existing chat user",
+    )
     title: str = Field(..., min_length=1, max_length=200, description="Question title")
     body: str = Field(..., min_length=1, max_length=10000, description="Question detailed body")
     tag: str = Field(..., min_length=1, max_length=50, description="Category or topic tag")
@@ -21,8 +27,14 @@ class QuestionCreate(BaseModel):
 
 
 class AnswerCreate(BaseModel):
-    """Payload for posting an answer."""
-    author: str = Field(..., min_length=1, max_length=50, description="Nickname of existing chat user")
+    """Payload for posting an answer. Accepts 'author' or 'nickname'."""
+    author: str = Field(
+        ...,
+        validation_alias=AliasChoices("author", "nickname"),
+        min_length=1,
+        max_length=50,
+        description="Nickname of existing chat user",
+    )
     body: str = Field(..., min_length=1, max_length=10000, description="Answer content")
 
     @field_validator("author", "body")

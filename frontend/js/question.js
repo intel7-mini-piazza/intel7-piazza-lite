@@ -1,11 +1,12 @@
-// 백엔드 API 서버 주소 (로컬 개발 환경 기준)
-const API_BASE_URL = "http://127.0.0.1:8100";
+// 백엔드 API 상대 경로
+const API_BASE_URL = "";
 
 document.addEventListener("DOMContentLoaded", () => {
     const questionId = getQuestionIdFromURL();
 
     if (!questionId) {
         alert("질문 ID가 없습니다.");
+        window.location.href = "index.html";
         return;
     }
 
@@ -27,37 +28,51 @@ function getQuestionIdFromURL() {
 
 // 2. 질문 상세 및 답변 목록 조회 (GET)
 async function loadQuestionDetail(questionId) {
+    const questionContainer = document.getElementById("question-container");
     try {
-        const response = await fetch(`${API_BASE_URL}/api/questions/${questionId}`);
+        const response = await fetch(`/api/questions/${questionId}`);
         
         if (!response.ok) {
-            throw new Error("질문을 찾을 수 없습니다.");
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || "질문을 찾을 수 없습니다.");
         }
 
         const question = await response.json();
         renderQuestion(question);
-        renderAnswers(question.answers, questionId);
+        renderAnswers(question.answers, questionId, question.accepted_answer_id);
     } catch (error) {
         console.error(error);
-        document.getElementById("question-container").innerHTML = `<p>${error.message}</p>`;
+        if (questionContainer) {
+            questionContainer.innerHTML = `<p style="color: #dc2626; padding: 20px;">${escapeHtml(error.message)}</p>`;
+        }
     }
 }
 
-// 3. 질문 내용 화면 렌더링
+// 3. 질문 내용 화면 렌더링 (안전한 textContent 사용)
 function renderQuestion(question) {
-    document.getElementById("question-title").textContent = question.title;
-    document.getElementById("question-author").textContent = `작성자: ${question.author}`;
-    document.getElementById("question-tag").textContent = `태그: ${question.tag}`;
-    document.getElementById("question-body").textContent = question.body;
+    const titleEl = document.getElementById("question-title");
+    const authorEl = document.getElementById("question-author");
+    const tagEl = document.getElementById("question-tag");
+    const bodyEl = document.getElementById("question-body");
+
+    if (titleEl) titleEl.textContent = question.title;
+    if (authorEl) authorEl.textContent = `작성자: ${question.author}`;
+    if (tagEl) tagEl.textContent = `태그: ${question.tag}`;
+    if (bodyEl) bodyEl.textContent = question.body;
 }
 
-// 4. 답변 목록 화면 렌더링 (서버가 주는 오래된 순 그대로 출력)
-function renderAnswers(answers, questionId) {
+// 4. 답변 목록 화면 렌더링 (XSS 방지 DOM 조립)
+function renderAnswers(answers, questionId, acceptedAnswerId) {
     const answerListContainer = document.getElementById("answer-list");
+    if (!answerListContainer) return;
     answerListContainer.innerHTML = "";
 
     if (!answers || answers.length === 0) {
-        answerListContainer.innerHTML = "<p>아직 답변이 없습니다. 첫 답변을 작성해보세요.</p>";
+        const emptyMsg = document.createElement("p");
+        emptyMsg.textContent = "아직 답변이 없습니다. 첫 답변을 작성해보세요.";
+        emptyMsg.style.color = "#666";
+        emptyMsg.style.padding = "10px 0";
+        answerListContainer.appendChild(emptyMsg);
         return;
     }
 
@@ -65,25 +80,67 @@ function renderAnswers(answers, questionId) {
         const answerItem = document.createElement("div");
         answerItem.className = "answer-item";
         
-        const isAccepted = answer.accepted;
+        const isAccepted = answer.accepted || (acceptedAnswerId && answer.id === acceptedAnswerId);
         
-        answerItem.innerHTML = `
-            <div class="answer-header">
-                <strong>${answer.author}</strong>
-                ${isAccepted ? '<span class="accepted-badge">✓ 채택된 답변</span>' : ''}
-            </div>
-            <p class="answer-body">${answer.body}</p>
-            ${!isAccepted ? `<button class="btn" onclick="acceptAnswer(${questionId}, ${answer.id})">채택</button>` : ''}
-            <hr style="margin-top: 10px; border: 0; border-top: 1px solid #eee;">
-        `;
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "answer-header";
+        headerDiv.style.display = "flex";
+        headerDiv.style.alignItems = "center";
+        headerDiv.style.gap = "8px";
+        headerDiv.style.marginBottom = "8px";
+
+        const authorStrong = document.createElement("strong");
+        authorStrong.textContent = answer.author;
+        headerDiv.appendChild(authorStrong);
+
+        if (isAccepted) {
+            const acceptedBadge = document.createElement("span");
+            acceptedBadge.className = "accepted-badge";
+            acceptedBadge.textContent = "✓ 채택된 답변";
+            headerDiv.appendChild(acceptedBadge);
+        }
+
+        const bodyP = document.createElement("p");
+        bodyP.className = "answer-body";
+        bodyP.textContent = answer.body;
+        bodyP.style.whiteSpace = "pre-wrap";
+        bodyP.style.margin = "8px 0";
+
+        answerItem.appendChild(headerDiv);
+        answerItem.appendChild(bodyP);
+
+        if (!isAccepted) {
+            const actionDiv = document.createElement("div");
+            actionDiv.style.marginTop = "8px";
+
+            const acceptBtn = document.createElement("button");
+            acceptBtn.className = "btn";
+            acceptBtn.textContent = "채택";
+            acceptBtn.style.backgroundColor = "#10b981";
+            acceptBtn.style.color = "#fff";
+            acceptBtn.style.padding = "4px 12px";
+            acceptBtn.style.fontSize = "13px";
+            acceptBtn.onclick = () => acceptAnswer(questionId, answer.id, acceptBtn);
+
+            actionDiv.appendChild(acceptBtn);
+            answerItem.appendChild(actionDiv);
+        }
+
+        const hr = document.createElement("hr");
+        hr.style.marginTop = "12px";
+        hr.style.border = "0";
+        hr.style.borderTop = "1px solid #eee";
+        answerItem.appendChild(hr);
+
         answerListContainer.appendChild(answerItem);
     });
 }
 
-// 5. 답변 등록 (POST) - author 필드 사용 및 BambooChat 에러 대응
+// 5. 답변 등록 (POST)
 async function submitAnswer(questionId) {
     const authorInput = document.getElementById("author");
     const bodyInput = document.getElementById("answer-body");
+    const submitBtn = document.getElementById("submit-answer");
 
     const author = authorInput.value.trim();
     const body = bodyInput.value.trim();
@@ -93,45 +150,76 @@ async function submitAnswer(questionId) {
         return;
     }
 
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "답변 등록 중...";
+    }
+
     try {
-        const response = await fetch(`${API_BASE_URL}/api/questions/${questionId}/answers`, {
+        const response = await fetch(`/api/questions/${questionId}/answers`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ author, body })
+            body: JSON.stringify({ author, nickname: author, body })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            // BambooChat에 등록되지 않은 닉네임일 경우 서버의 detail 메시지 출력
             throw new Error(data.detail || "답변 등록에 실패했습니다.");
         }
 
         // 입력창 초기화 후 화면 갱신
-        authorInput.value = "";
         bodyInput.value = "";
-        loadQuestionDetail(questionId);
+        await loadQuestionDetail(questionId);
     } catch (error) {
         alert(error.message);
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "답변 등록";
+        }
     }
 }
 
 // 6. 답변 채택 (POST)
-async function acceptAnswer(questionId, answerId) {
+async function acceptAnswer(questionId, answerId, buttonEl) {
+    if (buttonEl) {
+        buttonEl.disabled = true;
+        buttonEl.textContent = "채택 중...";
+    }
+
     try {
-        const response = await fetch(`${API_BASE_URL}/api/questions/${questionId}/accept/${answerId}`, {
+        const response = await fetch(`/api/questions/${questionId}/accept/${answerId}`, {
             method: "POST"
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            throw new Error("답변 채택에 실패했습니다.");
+            throw new Error(data.detail || "답변 채택에 실패했습니다.");
         }
 
         // 채택 성공 후 화면 갱신
-        loadQuestionDetail(questionId);
+        await loadQuestionDetail(questionId);
     } catch (error) {
         alert(error.message);
+        if (buttonEl) {
+            buttonEl.disabled = false;
+            buttonEl.textContent = "채택";
+        }
     }
+}
+
+// Helper: Simple HTML escape for fallback strings
+function escapeHtml(text) {
+    if (!text) return "";
+    return text.replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    }[m]));
 }
