@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>질문 작성 | Piazza-lite</title>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <main class="container">
+
+        <div class="card">
+
+            <h1>질문 작성</h1>
+
+            <form id="questionForm">
+
+                <!-- Nickname -->
+                <div class="form-group">
+                    <label for="nickname">Nickname</label>
+
+                    <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력하세요">
+                </div>
+
+
+                <!-- Title -->
+                <div class="form-group">
+                    <label for="title">Title</label>
+
+                    <input type="text" id="title" name="title" placeholder="질문 제목을 입력하세요">
+                </div>
+
+
+                <!-- Tag -->
+                <div class="form-group">
+                    <label for="tag">Tag</label>
+
+                    <select id="tag" name="tag">
+
+                        <option value="Python">Python</option>
+                        <option value="Arduino">Arduino</option>
+                        <option value="Network">Network</option>
+                        <option value="PLC">PLC</option>
+                        <option value="FastAPI">FastAPI</option>
+                        <option value="Docker">Docker</option>
+                        <option value="Other">Other</option>
+
+                    </select>
+                </div>
+
+
+                <!-- Question -->
+                <div class="form-group">
+                    <label for="body">Question</label>
+
+                    <textarea id="body" name="body" rows="8" placeholder="질문 내용을 입력하세요"></textarea>
+                </div>
+
+
+                <!-- Error Message -->
+                <p id="message"></p>
+
+
+                <button type="submit" class="btn">
+                    질문 등록
+                </button>
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+    <script src="ask.js"></script>
+
+</body>
+
+</html>
