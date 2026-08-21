@@ -7,7 +7,7 @@
 
     <title>질문 작성 | Piazza-lite</title>
 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/ask.css">
 </head>
 
 <body>
@@ -16,7 +16,10 @@
 
         <div class="card">
 
-            <h1>질문 작성</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h1>질문 작성</h1>
+                <a href="/" style="text-decoration: none; color: #4F46E5; font-size: 0.9rem;">← 홈으로</a>
+            </div>
 
             <form id="questionForm">
 
@@ -66,7 +69,7 @@
                 <p id="message"></p>
 
 
-                <button type="submit" class="btn">
+                <button type="submit" class="btn" id="submitBtn">
                     질문 등록
                 </button>
 
@@ -77,7 +80,7 @@
     </main>
 
 
-    <script src="ask.js"></script>
+    <script src="js/ask.js"></script>
 
 </body>
 
