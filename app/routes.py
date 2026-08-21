@@ -1,4 +1,4 @@
-"""API route handlers for Piazza-Lite forum backend."""
+"""API route handlers for Bamboo-Stack (대나무지식인) forum backend."""
 
 from datetime import datetime, timezone
 from typing import List, Optional

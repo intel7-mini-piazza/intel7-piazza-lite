@@ -1,4 +1,4 @@
-"""Startup runner script for Piazza-Lite server."""
+"""Startup runner script for Bamboo-Stack (대나무지식인) server."""
 
 import argparse
 import os
@@ -18,7 +18,7 @@ import uvicorn
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Start Intel7 Piazza-Lite Forum Server")
+    parser = argparse.ArgumentParser(description="Start Bamboo-Stack (대나무지식인) Forum Server")
     parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=8100, help="Bind port (default: 8100)")
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
@@ -27,7 +27,7 @@ def main():
 
     db_path = os.environ.get("CLASSROOM_DB_PATH")
     print("=" * 60)
-    print("  Starting Intel7 Piazza-Lite Application")
+    print("  Starting Bamboo-Stack (대나무지식인) Application")
     print(f"  - Database: {db_path}")
     print(f"  - Server:   http://{args.host}:{args.port}")
     print(f"  - Web UI:   http://127.0.0.1:{args.port}/")

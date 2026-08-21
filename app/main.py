@@ -1,4 +1,4 @@
-"""FastAPI application entrypoint for Piazza-Lite forum backend."""
+"""FastAPI application entrypoint for Bamboo-Stack (대나무지식인) forum backend."""
 
 import logging
 import os
@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-logger = logging.getLogger("piazza-lite")
+logger = logging.getLogger("bamboo-stack")
 
 # Resolve frontend directory relative to application file
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
@@ -24,10 +24,10 @@ FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "fr
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown lifespan handler."""
-    logger.info("Initializing Piazza-Lite backend service...")
+    logger.info("Initializing Bamboo-Stack (대나무지식인) backend service...")
     try:
         init_db()
-        logger.info("Database verified and Piazza-Lite tables initialized successfully.")
+        logger.info("Database verified and Bamboo-Stack tables initialized successfully.")
     except Exception as e:
         logger.error(f"FATAL: Database initialization failed: {e}")
         raise
@@ -38,11 +38,11 @@ async def lifespan(app: FastAPI):
         raise RuntimeError(error_msg)
 
     yield
-    logger.info("Shutting down Piazza-Lite backend service.")
+    logger.info("Shutting down Bamboo-Stack backend service.")
 
 
 app = FastAPI(
-    title="Intel7 Piazza-Lite API",
+    title="Bamboo-Stack (대나무지식인) API",
     description="Classroom Q&A Forum Backend sharing user accounts with BambooChat.",
     version="1.0.0",
     lifespan=lifespan,

@@ -1,5 +1,5 @@
 // ==========================================================================
-// Piazza-Lite Unified Home Workspace Logic
+// Bamboo-Stack (대나무지식인) Unified Home Workspace Logic
 // ==========================================================================
 
 const API_BASE_URL = "/api/questions";
@@ -692,7 +692,7 @@ function renderWelcome(updateHistory = false) {
     if (!postDetail) return;
     postDetail.innerHTML = `
         <div class="initial-message">
-            <h3>교수님과 학생들이 좋아하는 Piazza-lite의 주요 기능:</h3>
+            <h3>교수님과 학생들이 좋아하는 대나무지식인(Bamboo-Stack)의 주요 기능:</h3>
             <ul>
                 <li>
                     <span class="step-icon">1</span>

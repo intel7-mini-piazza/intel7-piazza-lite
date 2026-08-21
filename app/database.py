@@ -1,4 +1,4 @@
-"""Database connection, initialization, and authentication module for Piazza-Lite."""
+"""Database connection, initialization, and authentication module for Bamboo-Stack (대나무지식인)."""
 
 import hashlib
 import logging
@@ -13,7 +13,7 @@ from typing import Generator, Optional
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
-logger = logging.getLogger("piazza-lite.database")
+logger = logging.getLogger("bamboo-stack.database")
 
 # Argon2 Password Hasher matching BambooChat configuration
 _PASSWORD_HASHER = PasswordHasher(

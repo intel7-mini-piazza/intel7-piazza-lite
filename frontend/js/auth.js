@@ -1,5 +1,5 @@
 // ==========================================================================
-// Piazza-Lite Shared Frontend Authentication Helper
+// Bamboo-Stack (대나무지식인) Shared Frontend Authentication Helper
 // ==========================================================================
 
 async function fetchCurrentUser() {

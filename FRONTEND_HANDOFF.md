@@ -1,4 +1,4 @@
-# Piazza-Lite Frontend Handoff & API Specification
+# Bamboo-Stack (대나무지식인) Frontend Handoff & API Specification
 
 **API Contract Status**: **FROZEN (Authenticated V2 - Single Workspace)**  
 All question and answer interactions occur inside the Home two-column workspace.

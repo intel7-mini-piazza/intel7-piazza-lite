@@ -1,4 +1,4 @@
-"""Pydantic schemas and contract models for Piazza-Lite."""
+"""Pydantic schemas and contract models for Bamboo-Stack (대나무지식인)."""
 
 from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator

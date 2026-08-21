@@ -1,4 +1,4 @@
-"""Automated smoke test suite for Piazza-Lite with BambooChat authentication."""
+"""Automated smoke test suite for Bamboo-Stack (대나무지식인) with BambooChat authentication."""
 
 import os
 import sys
@@ -10,7 +10,7 @@ BASE_URL = os.getenv("PIAZZA_BASE_URL", "http://127.0.0.1:8100")
 
 def run_smoke_tests():
     print("=" * 60)
-    print(f"Starting Piazza-Lite Auth & API Smoke Tests against {BASE_URL}")
+    print(f"Starting Bamboo-Stack (대나무지식인) Auth & API Smoke Tests against {BASE_URL}")
     print("=" * 60)
 
     # Use a persistent client with cookie jar

@@ -1,5 +1,5 @@
 // ==========================================================================
-// Piazza-Lite Login Logic
+// Bamboo-Stack (대나무지식인) Login Logic
 // ==========================================================================
 
 document.addEventListener("DOMContentLoaded", async () => {

@@ -1,4 +1,4 @@
-"""Repeatable classroom seed data generator for Piazza-Lite.
+"""Repeatable classroom seed data generator for Bamboo-Stack (대나무지식인).
 
 Uses existing user accounts from BambooChat. Running this script multiple times
 is idempotent and will not create duplicate questions or answers.
