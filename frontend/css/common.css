@@ -1,7 +1,159 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: sans-serif; line-height: 1.6; background-color: #f4f7f6; padding: 20px; }
-.container { max-width: 800px; margin: 0 auto; }
-.btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-.btn-primary { background-color: #0066cc; color: white; }
-.input-field { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 4px; }
-section { margin-bottom: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+/* ==========================================================================
+   Piazza-Lite Shared Design System & Base Styles
+   Derived from Authoritative Home/Search Implementation
+   ========================================================================== */
+
+:root {
+    --piazza-primary: #3167b1;       /* Header main blue */
+    --piazza-action: #2b74c4;        /* Action/button blue */
+    --piazza-action-hover: #1a62ab;  /* Button hover blue */
+    --piazza-background: #e6ecf0;    /* Page background */
+    --piazza-surface: #ffffff;       /* Card/surface background */
+    --piazza-surface-alt: #f6f8fa;   /* Highlight surface */
+    --piazza-text: #1f2937;          /* Body text color */
+    --piazza-heading: #111827;       /* Headings */
+    --piazza-muted: #6b7280;         /* Muted subtext */
+    --piazza-border: #d9dfe4;        /* Card borders */
+    --piazza-border-input: #c8cfd6;  /* Form input borders */
+    --piazza-tag-bg: #eaf4ff;        /* Tag pill background */
+    --piazza-tag-text: #2b74c4;      /* Tag pill text */
+    --piazza-success: #16a34a;       /* Solved / accepted state */
+    --piazza-danger: #dc2626;        /* Unsolved / error state */
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    background-color: var(--piazza-background);
+    color: var(--piazza-text);
+    line-height: 1.5;
+}
+
+/* ==========================================================================
+   Shared Header
+   ========================================================================== */
+
+.header {
+    background-color: var(--piazza-primary);
+    border-bottom: 1px solid #1c4575;
+}
+
+.header-inner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.logo:hover {
+    color: #ffffff;
+}
+
+.header-nav-link {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.9;
+    transition: opacity 0.15s;
+}
+
+.header-nav-link:hover {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Shared Layout & Container
+   ========================================================================== */
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ==========================================================================
+   Shared Buttons & Inputs
+   ========================================================================== */
+
+.btn {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: var(--piazza-action);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: var(--piazza-action-hover);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.input-field {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--piazza-border-input);
+    border-radius: 6px;
+    background-color: #ffffff;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--piazza-text);
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.input-field:focus {
+    border-color: var(--piazza-action);
+}
+
+textarea.input-field {
+    resize: vertical;
+}
+
+/* Status Message */
+.status-message {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--piazza-muted);
+    background-color: #ffffff;
+    border: 1px solid var(--piazza-border);
+    border-radius: 6px;
+}
+
+.status-message.error {
+    color: var(--piazza-danger);
+}

@@ -1,50 +1,44 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>질문 작성 | Piazza-lite</title>
-
+    <title>Piazza-lite | 질문 작성</title>
+    <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/ask.css">
 </head>
-
 <body>
 
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" class="logo">Piazza-lite</a>
+            <a href="index.html" class="header-nav-link">← 목록으로 돌아가기</a>
+        </div>
+    </header>
+
     <main class="container">
-
-        <div class="card">
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h1>질문 작성</h1>
-                <a href="/" style="text-decoration: none; color: #4F46E5; font-size: 0.9rem;">← 홈으로</a>
-            </div>
+        <div class="ask-card">
+            <h2 class="ask-title">새 질문 작성</h2>
+            <hr style="border: 0; border-top: 1px solid var(--piazza-border); margin: 16px 0 24px;">
 
             <form id="questionForm">
-
                 <!-- Nickname -->
                 <div class="form-group">
-                    <label for="nickname">Nickname</label>
-
-                    <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력하세요">
+                    <label for="nickname">작성자 닉네임</label>
+                    <input type="text" id="nickname" name="nickname" class="input-field" placeholder="BambooChat에 등록된 닉네임을 입력하세요">
+                    <span class="field-hint">채팅 앱에 등록된 닉네임으로 작성해야 합니다.</span>
                 </div>
-
 
                 <!-- Title -->
                 <div class="form-group">
-                    <label for="title">Title</label>
-
-                    <input type="text" id="title" name="title" placeholder="질문 제목을 입력하세요">
+                    <label for="title">질문 제목</label>
+                    <input type="text" id="title" name="title" class="input-field" placeholder="질문 핵심 내용을 요약해주세요">
                 </div>
-
 
                 <!-- Tag -->
                 <div class="form-group">
-                    <label for="tag">Tag</label>
-
-                    <select id="tag" name="tag">
-
+                    <label for="tag">카테고리 태그</label>
+                    <select id="tag" name="tag" class="input-field">
                         <option value="Python">Python</option>
                         <option value="Arduino">Arduino</option>
                         <option value="Network">Network</option>
@@ -52,36 +46,26 @@
                         <option value="FastAPI">FastAPI</option>
                         <option value="Docker">Docker</option>
                         <option value="Other">Other</option>
-
                     </select>
                 </div>
 
-
-                <!-- Question -->
+                <!-- Question Body -->
                 <div class="form-group">
-                    <label for="body">Question</label>
-
-                    <textarea id="body" name="body" rows="8" placeholder="질문 내용을 입력하세요"></textarea>
+                    <label for="body">질문 상세 내용</label>
+                    <textarea id="body" name="body" rows="10" class="input-field" placeholder="시도해본 코드, 발생한 오류 메시지, 문제 상황을 상세히 적어주세요"></textarea>
                 </div>
 
-
                 <!-- Error Message -->
-                <p id="message"></p>
+                <p id="message" class="form-message"></p>
 
-
-                <button type="submit" class="btn" id="submitBtn">
-                    질문 등록
-                </button>
-
+                <div class="form-actions">
+                    <a href="index.html" class="btn" style="background-color: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db;">취소</a>
+                    <button type="submit" id="submitBtn" class="btn btn-primary">질문 등록</button>
+                </div>
             </form>
-
         </div>
-
     </main>
 
-
     <script src="js/ask.js"></script>
-
 </body>
-
 </html>

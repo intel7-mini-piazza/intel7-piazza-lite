@@ -1,70 +1,50 @@
 // =========================
-// 테스트용 가짜 데이터 (더미 데이터)
+// Piazza-Lite Home & Search Logic
 // =========================
-const mockQuestions = [
-    {
-        id: 1,
-        tag: "hw1",
-        title: "급수 급속 수렴 여부 질문입니다.",
-        author: "김철수",
-        answer_count: 3,
-        solved: true,
-        created_at: "2026-08-21",
-        content: "1n^(3/2) 형태로 바꿨는데 수렴하는 게 맞나요? 계산 과정을 모르겠습니다."
-    },
-    {
-        id: 2,
-        tag: "hw2",
-        title: "기말고사 대비 파이널 8번 문제 질문",
-        author: "이영희",
-        answer_count: 1,
-        solved: false,
-        created_at: "2026-08-20",
-        content: "8번 문제 풀이 접근을 어떻게 해야 할지 감이 안 잡힙니다. 힌트 부탁드려요!"
-    },
-    {
-        id: 3,
-        tag: "project",
-        title: "팀 프로젝트 브랜치 생성 및 푸시 방법",
-        author: "박민수",
-        answer_count: 5,
-        solved: true,
-        created_at: "2026-08-19",
-        content: "각자 브랜치를 만들어서 push한 뒤 PR을 보내는 순서가 맞는지 확인 부탁드립니다."
-    }
-];
 
-// =========================
+const API_URL = "/api/questions";
+
 // HTML 요소 가져오기
-// =========================
 const postFeed = document.querySelector("#postFeed");
 const postDetail = document.querySelector("#postDetail");
 const searchForm = document.querySelector("#searchForm");
 const searchInput = document.querySelector("#searchInput");
 const askButton = document.querySelector("#askButton");
 
-// =========================
-// 질문 목록 불러오기 (더미 데이터 사용)
-// =========================
-function loadQuestions(search = "") {
-    let filtered = mockQuestions;
+// 초기 가이드 메시지 HTML 캐싱
+const initialDetailHtml = postDetail ? postDetail.innerHTML : "";
 
-    if (search.trim() !== "") {
-        filtered = mockQuestions.filter(q => 
-            q.title.includes(search) || q.content.includes(search)
-        );
+// =========================
+// 질문 목록 불러오기 (실제 백엔드 API 연동)
+// =========================
+async function loadQuestions(search = "") {
+    try {
+        let url = API_URL;
+        if (search.trim() !== "") {
+            url += `?search=${encodeURIComponent(search.trim())}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error("질문 목록을 불러오지 못했습니다.");
+        }
+
+        const questions = await response.json();
+        renderQuestions(questions);
+    } catch (error) {
+        console.error("질문 로딩 실패:", error);
+        showError(error.message);
     }
-
-    renderQuestions(filtered);
 }
 
 // =========================
-// 질문 목록 화면에 출력
+// 질문 목록 화면에 출력 (XSS 방지 safe textContent)
 // =========================
 function renderQuestions(questions) {
+    if (!postFeed) return;
     postFeed.innerHTML = "";
 
-    if (questions.length === 0) {
+    if (!questions || questions.length === 0) {
         showEmpty();
         return;
     }
@@ -72,10 +52,11 @@ function renderQuestions(questions) {
     questions.forEach(function(question) {
         const card = document.createElement("article");
         card.className = "post-card";
+        card.id = `post-card-${question.id}`;
 
         const tag = document.createElement("span");
         tag.className = "post-tag";
-        tag.textContent = `[${question.tag}]`;
+        tag.textContent = `[${question.tag || "일반"}]`;
 
         const title = document.createElement("h3");
         title.className = "post-title";
@@ -85,10 +66,10 @@ function renderQuestions(questions) {
         meta.className = "post-meta";
 
         const author = document.createElement("span");
-        author.textContent = question.author;
+        author.textContent = question.author || "익명";
 
         const answerCount = document.createElement("span");
-        answerCount.textContent = `답변 ${question.answer_count}`;
+        answerCount.textContent = `답변 ${question.answer_count || 0}`;
 
         const solved = document.createElement("span");
         if (question.solved) {
@@ -117,7 +98,7 @@ function renderQuestions(questions) {
         card.appendChild(title);
         card.appendChild(meta);
 
-        // 카드 클릭 시 상세 내용 변경
+        // 카드 클릭 시 우측 영역에 상세 미리보기 및 페이지 이동 안내
         card.addEventListener("click", function() {
             const currentActive = document.querySelector(".post-card.active");
             if (currentActive) {
@@ -125,7 +106,7 @@ function renderQuestions(questions) {
             }
             card.classList.add("active");
 
-            showDetail(question);
+            showDetail(question.id);
         });
 
         postFeed.appendChild(card);
@@ -133,66 +114,114 @@ function renderQuestions(questions) {
 }
 
 // =========================
-// 상세 내용 표시
+// 우측 패널 상세 내용 표시 (API 호출)
 // =========================
-function showDetail(question) {
+async function showDetail(questionId) {
+    if (!postDetail) return;
+
     postDetail.innerHTML = `
-        <h2>${question.title}</h2>
-        <p class="post-author">${question.author} · ${question.created_at}</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 16px 0;">
-        <p class="post-text">${question.content}</p>
+        <div style="padding: 40px 20px; text-align: center; color: #6b7280;">
+            <p>질문 상세 내용을 불러오는 중입니다...</p>
+        </div>
     `;
-}
 
-// =========================
-// 질문하기 버튼 클릭 시 API 연결 확인 및 에러 출력
-// =========================
-askButton.addEventListener("click", async function() {
     try {
-        // 질문 등록 페이지용 백엔드 API 엔드포인트 호출 시도
-        const response = await fetch("/api/questions/check-status");
-
+        const response = await fetch(`/api/questions/${questionId}`);
         if (!response.ok) {
-            throw new Error(`API 응답 오류 (상태 코드: ${response.status})`);
+            throw new Error("질문 정보를 불러오지 못했습니다.");
         }
+        const q = await response.json();
 
-        // API 연결 성공 시 질문 작성 페이지로 이동
-        window.location.href = "ask.html";
+        const solvedBadge = q.solved
+            ? `<span style="color: #16a34a; font-weight: 600; font-size: 13px;">✓ 해결됨 (채택 완료)</span>`
+            : `<span style="color: #dc2626; font-size: 13px;">미해결</span>`;
 
-    } catch (error) {
-        console.error("질문하기 API 연결 실패:", error);
-
-        // 오른쪽 상세 영역(postDetail)에 눈으로 바로 보이는 에러 메시지 표시
         postDetail.innerHTML = `
-            <div class="status-message error" style="padding: 40px 20px; text-align: center;">
-                <h2 style="color: #dc2626; margin-bottom: 12px;">⚠️ 백엔드 API 연결 실패</h2>
-                <p style="font-size: 15px; color: #374151; margin-bottom: 8px;">
-                    <b>[질문하기]</b> 기능에 필요한 API 서버에 연결할 수 없습니다.
-                </p>
-                <code style="background-color: #f3f4f6; padding: 6px 12px; border-radius: 4px; color: #e11d48; font-size: 13px;">
-                    ${error.message} (엔드포인트: /api/questions/check-status)
-                </code>
-                <p style="font-size: 13px; color: #6b7280; margin-top: 20px;">
-                    현재 프론트엔드(Live Server)만 실행 중이거나 백엔드 서버가 열려있지 않은 상태입니다.
-                </p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #111827;">${escapeHtml(q.title)}</h2>
+                <a href="question.html?id=${q.id}" class="search-button" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; height: 32px; font-size: 12px;">
+                    상세 및 답변하기 →
+                </a>
+            </div>
+            <p class="post-author" style="font-size: 12px; color: #6b7280; margin-bottom: 16px;">
+                <b>${escapeHtml(q.author)}</b> · 태그: [${escapeHtml(q.tag)}] · ${solvedBadge}
+            </p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 16px 0;">
+            <div class="post-text" style="font-size: 14px; line-height: 1.7; color: #374151; white-space: pre-wrap; word-break: break-word;">${escapeHtml(q.body)}</div>
+            
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                <h4 style="margin: 0 0 12px; font-size: 14px; color: #111827;">답변 (${q.answers ? q.answers.length : 0}개)</h4>
+                ${
+                    q.answers && q.answers.length > 0
+                        ? q.answers.map(a => `
+                            <div style="padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #4b5563; margin-bottom: 4px;">
+                                    <strong>${escapeHtml(a.author)}</strong>
+                                    ${a.accepted ? `<span style="color: #16a34a; font-weight: 600;">✓ 채택된 답변</span>` : ''}
+                                </div>
+                                <div style="font-size: 13px; color: #1f2937; white-space: pre-wrap;">${escapeHtml(a.body)}</div>
+                            </div>
+                        `).join('')
+                        : `<p style="font-size: 13px; color: #9ca3af;">아직 등록된 답변이 없습니다.</p>`
+                }
+            </div>
+        `;
+    } catch (err) {
+        postDetail.innerHTML = `
+            <div class="status-message error" style="padding: 30px; text-align: center;">
+                <p>${escapeHtml(err.message)}</p>
+                <button onclick="window.location.href='question.html?id=${questionId}'" class="search-button" style="margin-top: 10px;">
+                    질문 페이지 직접 이동
+                </button>
             </div>
         `;
     }
-});
+}
+
+// =========================
+// 질문하기 버튼 클릭 시 이동
+// =========================
+if (askButton) {
+    askButton.addEventListener("click", function() {
+        window.location.href = "ask.html";
+    });
+}
 
 // =========================
 // 검색 이벤트
 // =========================
-searchForm.addEventListener("submit", function(event) {
-    event.preventDefault();
-    loadQuestions(searchInput.value);
-});
-
-// =========================
-// 빈 상태
-// =========================
-function showEmpty() {
-    postFeed.innerHTML = `<div class="status-message">검색 결과가 없습니다.</div>`;
+if (searchForm) {
+    searchForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        loadQuestions(searchInput.value);
+    });
 }
 
+// =========================
+// 빈 상태 / 오류 상태
+// =========================
+function showEmpty() {
+    if (postFeed) {
+        postFeed.innerHTML = `<div class="status-message">검색 결과가 없습니다.</div>`;
+    }
+}
+
+function showError(msg) {
+    if (postFeed) {
+        postFeed.innerHTML = `<div class="status-message error">질문을 불러오지 못했습니다: ${escapeHtml(msg)}</div>`;
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return "";
+    return String(text).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    }[m]));
+}
+
+// 페이지 로드 시 실행
 loadQuestions();
