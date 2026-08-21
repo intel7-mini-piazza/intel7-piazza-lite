@@ -1,7 +1,6 @@
-// 백엔드 API 서버 주소 (개발 환경 기준)
-const API_BASE_URL = "http://localhost:8100";
+// 백엔드 API 서버 주소 (로컬 개발 환경 기준)
+const API_BASE_URL = "http://127.0.0.1:8100";
 
-// 페이지가 로드되자마자 실행
 document.addEventListener("DOMContentLoaded", () => {
     const questionId = getQuestionIdFromURL();
 
@@ -13,14 +12,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // 질문 상세 데이터 불러오기
     loadQuestionDetail(questionId);
 
-    // 답변 등록 버튼 이벤트 리스너 연결
+    // 답변 등록 버튼 이벤트 리스너
     const submitBtn = document.getElementById("submit-answer");
     if (submitBtn) {
         submitBtn.addEventListener("click", () => submitAnswer(questionId));
     }
 });
 
-// 1. URL 쿼리 파라미터에서 id 추출하는 함수
+// 1. URL 쿼리 파라미터에서 id 추출
 function getQuestionIdFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get("id");
@@ -44,14 +43,15 @@ async function loadQuestionDetail(questionId) {
     }
 }
 
-// 3. 질문 내용 화면에 렌더링
+// 3. 질문 내용 화면 렌더링
 function renderQuestion(question) {
     document.getElementById("question-title").textContent = question.title;
-    document.getElementById("question-author").textContent = question.author;
+    document.getElementById("question-author").textContent = `작성자: ${question.author}`;
+    document.getElementById("question-tag").textContent = `태그: ${question.tag}`;
     document.getElementById("question-body").textContent = question.body;
 }
 
-// 4. 답변 목록 화면에 렌더링
+// 4. 답변 목록 화면 렌더링 (서버가 주는 오래된 순 그대로 출력)
 function renderAnswers(answers, questionId) {
     const answerListContainer = document.getElementById("answer-list");
     answerListContainer.innerHTML = "";
@@ -65,7 +65,6 @@ function renderAnswers(answers, questionId) {
         const answerItem = document.createElement("div");
         answerItem.className = "answer-item";
         
-        // 채택된 답변인 경우 스타일이나 표시 다르게 처리
         const isAccepted = answer.accepted;
         
         answerItem.innerHTML = `
@@ -74,22 +73,22 @@ function renderAnswers(answers, questionId) {
                 ${isAccepted ? '<span class="accepted-badge">✓ 채택된 답변</span>' : ''}
             </div>
             <p class="answer-body">${answer.body}</p>
-            ${!isAccepted ? `<button onclick="acceptAnswer(${questionId}, ${answer.id})">채택</button>` : ''}
-            <hr>
+            ${!isAccepted ? `<button class="btn" onclick="acceptAnswer(${questionId}, ${answer.id})">채택</button>` : ''}
+            <hr style="margin-top: 10px; border: 0; border-top: 1px solid #eee;">
         `;
         answerListContainer.appendChild(answerItem);
     });
 }
 
-// 5. 답변 등록 (POST)
+// 5. 답변 등록 (POST) - author 필드 사용 및 BambooChat 에러 대응
 async function submitAnswer(questionId) {
-    const nicknameInput = document.getElementById("nickname");
+    const authorInput = document.getElementById("author");
     const bodyInput = document.getElementById("answer-body");
 
-    const nickname = nicknameInput.value.trim();
+    const author = authorInput.value.trim();
     const body = bodyInput.value.trim();
 
-    if (!nickname || !body) {
+    if (!author || !body) {
         alert("닉네임과 답변 내용을 모두 입력해주세요.");
         return;
     }
@@ -100,18 +99,19 @@ async function submitAnswer(questionId) {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ nickname, body })
+            body: JSON.stringify({ author, body })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            throw new Error("답변 등록에 실패했습니다.");
+            // BambooChat에 등록되지 않은 닉네임일 경우 서버의 detail 메시지 출력
+            throw new Error(data.detail || "답변 등록에 실패했습니다.");
         }
 
-        // 입력창 초기화
-        nicknameInput.value = "";
+        // 입력창 초기화 후 화면 갱신
+        authorInput.value = "";
         bodyInput.value = "";
-
-        // 데이터 갱신 후 화면 다시 불러오기
         loadQuestionDetail(questionId);
     } catch (error) {
         alert(error.message);

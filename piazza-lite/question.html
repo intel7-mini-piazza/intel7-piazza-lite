@@ -2,46 +2,41 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Piazza-lite | 질문 상세</title>
-    <!-- 나중에 공통 CSS로 교체될 예정 -->
+    <title>Piazza-Lite | 질문 상세</title>
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/question.css">
 </head>
 <body>
+    <div class="container">
+        <header>
+            <a href="index.html">← 목록으로 돌아가기</a>
+        </header>
 
-    <header>
-        <a href="index.html">← 목록으로 돌아가기</a>
-    </header>
+        <main id="question-container">
+            <!-- 질문 상세 정보 -->
+            <section id="question-detail">
+                <h2 id="question-title">로딩 중...</h2>
+                <div class="meta-info">
+                    <span id="question-author"></span> | <span id="question-tag"></span>
+                </div>
+                <div id="question-body"></div>
+            </section>
 
-    <main id="question-container">
-        <!-- 태그, 제목, 작성자, 질문 내용이 동적으로 삽입될 영역 -->
-        <div id="question-detail">
-            <h2 id="question-title">로딩 중...</h2>
-            <p>작성자: <span id="question-author"></span></p>
-            <div id="question-body"></div>
-        </div>
+            <!-- 답변 목록 -->
+            <section id="answers-section">
+                <h3>답변</h3>
+                <div id="answer-list"></div>
+            </section>
 
-        <hr>
-
-        <!-- 답변 목록 영역 -->
-        <section id="answers-section">
-            <h3>답변</h3>
-            <div id="answer-list">
-                <!-- 답변들이 동적으로 삽입될 영역 -->
-            </div>
-        </section>
-
-        <hr>
-
-        <!-- 답변 작성 폼 -->
-        <section id="answer-form-section">
-            <h3>답변 작성</h3>
-            <input type="text" id="nickname" placeholder="닉네임">
-            <textarea id="answer-body" placeholder="답변을 입력하세요"></textarea>
-            <button id="submit-answer">답변 등록</button>
-        </section>
-    </main>
-
+            <!-- 답변 작성 폼 -->
+            <section id="answer-form-section">
+                <h3>답변 작성</h3>
+                <input type="text" id="author" class="input-field" placeholder="닉네임 (BambooChat 닉네임)">
+                <textarea id="answer-body" class="input-field" placeholder="답변을 입력하세요"></textarea>
+                <button id="submit-answer" class="btn btn-primary">답변 등록</button>
+            </section>
+        </main>
+    </div>
     <script src="js/question.js"></script>
 </body>
 </html>
