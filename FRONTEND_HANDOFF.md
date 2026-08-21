@@ -1,7 +1,7 @@
 # Piazza-Lite Frontend Handoff & API Specification
 
-**API Contract Status**: **FROZEN (Authenticated V2)**  
-All question and answer endpoints require an active session issued via `/api/auth/login`.
+**API Contract Status**: **FROZEN (Authenticated V2 - Single Workspace)**  
+All question and answer interactions occur inside the Home two-column workspace.
 
 ---
 
@@ -14,14 +14,19 @@ All question and answer endpoints require an active session issued via `/api/aut
 
 ---
 
-## 2. Authentication & Session Model
+## 2. Architecture & URL Routing Model
 
-* **Session Mechanism**: HttpOnly cookie named `piazza_session`.
-* **Browser Fetches**: Because frontend files are served same-origin by FastAPI at `/`, `fetch()` calls automatically send the `piazza_session` cookie without additional authorization headers.
-* **Session Lifetime**: 12 hours (`Max-Age=43200`).
-* **Authorship**: Author identity is derived strictly from the active session. Frontends **must not** send `author` or `nickname` in POST request bodies.
-* **401 Unauthorized**: When receiving 401 on any protected API call, frontend redirects to `login.html?next=<encoded_path>`.
-* **403 Forbidden**: When a non-owner attempts to accept an answer, backend returns 403 Forbidden with `{"detail": "Only the question author can accept an answer"}`.
+* **Single-Workspace Layout**:
+  - **Left**: Live feed and search (`#postFeed`).
+  - **Right**: Workspace container (`#postDetail`).
+* **Canonical URL States**:
+  - Home / Welcome: `/`
+  - Selected Question Detail: `/?post=<question_id>`
+  - Question Composer: `/?compose=question`
+  - `/ask.html` and `/question.html?id=<id>` automatically redirect to the canonical URLs.
+* **Authentication**: HttpOnly cookie named `piazza_session` (12 hours).
+* **401 Unauthorized**: Redirects to `login.html?next=<encoded_path>`.
+* **403 Forbidden**: Only the question author can accept an answer solution.
 
 ---
 
@@ -65,46 +70,11 @@ All question and answer endpoints require an active session issued via `/api/aut
   }
 }
 ```
-*(Also sets `piazza_session` HttpOnly cookie)*
-
-**Failure Response (`401 Unauthorized`)**:
-```json
-{
-  "detail": "Invalid username or password"
-}
-```
+*(Sets `piazza_session` HttpOnly cookie)*
 
 ---
 
-### B. Current User Profile (`GET /api/auth/me`)
-
-**Success Response (`200 OK`)**:
-```json
-{
-  "authenticated": true,
-  "user": {
-    "id": 7,
-    "username": "sean",
-    "display_name": "Sean Choi",
-    "role": "student"
-  }
-}
-```
-
----
-
-### C. Logout (`POST /api/auth/logout`)
-
-**Success Response (`200 OK`)**:
-```json
-{
-  "success": true
-}
-```
-
----
-
-### D. List / Search Questions (`GET /api/questions` / `GET /api/questions?search=servo`)
+### B. List / Search Questions (`GET /api/questions` / `GET /api/questions?search=servo`)
 
 **Response (`200 OK`)**:
 ```json
@@ -123,7 +93,7 @@ All question and answer endpoints require an active session issued via `/api/aut
 
 ---
 
-### E. Ask Question (`POST /api/questions`)
+### C. Ask Question (`POST /api/questions`)
 
 **Request Body**:
 ```json
@@ -151,7 +121,7 @@ All question and answer endpoints require an active session issued via `/api/aut
 
 ---
 
-### F. Question Detail & Answers (`GET /api/questions/{id}`)
+### D. Question Detail & Answers (`GET /api/questions/{id}`)
 
 **Response (`200 OK`)**:
 ```json
@@ -181,7 +151,7 @@ All question and answer endpoints require an active session issued via `/api/aut
 
 ---
 
-### G. Post Answer (`POST /api/questions/{id}/answers`)
+### E. Post Answer (`POST /api/questions/{id}/answers`)
 
 **Request Body**:
 ```json
@@ -204,42 +174,7 @@ All question and answer endpoints require an active session issued via `/api/aut
 
 ---
 
-### H. Accept Answer (`POST /api/questions/{id}/accept/{answer_id}`)
+### F. Accept Answer (`POST /api/questions/{id}/accept/{answer_id}`)
 
 **Request Body**: *(empty)*  
 **Response (`200 OK`)**: Returns the updated `QuestionDetailResponse` with `solved = true` and `accepted = true`.
-
----
-
-## 5. Authorization & Error Responses
-
-* **Authentication Required (`401 Unauthorized`)**:
-  ```json
-  {
-    "detail": "Authentication required"
-  }
-  ```
-* **Forbidden Non-Owner Acceptance (`403 Forbidden`)**:
-  ```json
-  {
-    "detail": "Only the question author can accept an answer"
-  }
-  ```
-* **Question or Answer Not Found (`404 Not Found`)**:
-  ```json
-  {
-    "detail": "Question with ID 999 not found."
-  }
-  ```
-* **Validation Failure (`422 Unprocessable Entity`)**:
-  ```json
-  {
-    "detail": [
-      {
-        "loc": ["body", "title"],
-        "msg": "Field cannot be empty or contain only whitespace.",
-        "type": "value_error"
-      }
-    ]
-  }
-  ```

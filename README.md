@@ -1,11 +1,19 @@
 # Intel7 Piazza-Lite
 
-Piazza-Lite is a classroom Q&A and knowledge-sharing forum backend and web application built with FastAPI and SQLite. It operates alongside the classroom chat application (`BambooChat`), reusing registered user accounts and verifying passwords locally against Argon2id hashes without modifying chat tables.
+Piazza-Lite is a classroom Q&A and knowledge-sharing forum web application built with FastAPI and SQLite. It operates alongside the classroom chat application (`BambooChat`), reusing registered user accounts and verifying passwords locally against Argon2id hashes without modifying chat tables.
 
 ---
 
-## Architecture & Authentication Highlights
+## Architecture & Visual Foundation
 
+* **Piazza Two-Column Single-Workspace**: The entire authenticated Q&A experience happens on the Home page without leaving the view:
+  - **Left Column**: Live searchable question feed with active card highlighting and status indicators.
+  - **Right Column**: Unified workspace supporting Welcome guide, Question Detail & Answers, Inline Answer Composer, and New Question Composer.
+* **Canonical URL State (History API)**:
+  - Home / Welcome: `/`
+  - Selected Question Detail: `/?post=<question_id>`
+  - New Question Composer: `/?compose=question`
+  - `ask.html` and `question.html?id=<id>` are instant compatibility redirects.
 * **Shared SQLite Database**: Connects to the classroom chat SQLite database via `CLASSROOM_DB_PATH` with `PRAGMA journal_mode = WAL` for concurrent access.
 * **BambooChat Credential Verification**: Reuses existing `users` accounts from BambooChat. Passwords are verified locally using `argon2-cffi` matching BambooChat's normalization (`NFKC` + `casefold`) and Argon2id parameters.
 * **Dedicated Piazza Sessions**: Maintains an isolated `piazza_sessions` table in the shared database storing only SHA-256 hashes of opaque session tokens.
@@ -40,7 +48,13 @@ uv sync
 
 ## 2. Running the Server
 
-### Setting Environment & Starting Uvicorn
+### Option A: Using `run.py` (Recommended)
+
+```powershell
+uv run python run.py
+```
+
+### Option B: Using Uvicorn Directly
 
 ```powershell
 # Set path to the shared classroom chat database
@@ -91,11 +105,12 @@ uv run python scripts/smoke_test.py
 
 ## 5. Web Interface & Endpoints Reference
 
-### Web Pages
-* **Login**: `/login.html`
-* **Home / Feed**: `/` or `/index.html` (requires login)
-* **Ask Question**: `/ask.html` (requires login)
-* **Question Detail & Discussion**: `/question.html?id=<id>` (requires login)
+### Web Pages & Views
+* **Login Page**: `/login.html`
+* **Home / Unified Workspace**: `/`
+  * **Selected Question**: `/?post=<id>`
+  * **New Question Composer**: `/?compose=question`
+* **Compatibility Redirects**: `/ask.html` ➔ `/?compose=question`, `/question.html?id=<id>` ➔ `/?post=<id>`
 
 ### REST API Endpoints
 | Method | Endpoint | Auth Required | Description |
@@ -125,22 +140,18 @@ intel7-piazza-lite/
 │   ├── schemas.py         # Pydantic contract models & auth schemas
 │   └── routes.py          # API route handlers & get_current_user dependency
 ├── frontend/
-│   ├── index.html         # Home / Search page
+│   ├── index.html         # Unified Piazza two-column application shell
 │   ├── login.html         # Login page
-│   ├── ask.html           # Ask Question page
-│   ├── question.html      # Question detail & answers discussion page
+│   ├── ask.html           # Compatibility redirect to /?compose=question
+│   ├── question.html      # Compatibility redirect to /?post=<id>
 │   ├── css/
 │   │   ├── common.css     # Shared design tokens & base stylesheet
-│   │   ├── home.css       # Home/Feed stylesheet
-│   │   ├── login.css      # Login page stylesheet
-│   │   ├── ask.css        # Ask Question stylesheet
-│   │   └── question.css   # Question page stylesheet
+│   │   ├── home.css       # Full feed & workspace stylesheet
+│   │   └── login.css      # Login page stylesheet
 │   └── js/
 │       ├── auth.js        # Shared auth helper & session verification
 │       ├── login.js       # Login submission & safe redirect handling
-│       ├── home.js        # Home listing & debounced search logic
-│       ├── ask.js         # Question submission logic
-│       └── question.js    # Detail rendering, answer posting, solution acceptance
+│       └── home.js        # Unified feed, routing, composer, detail & reply logic
 ├── docs/
 │   ├── frontend_b_home_search_ko.md
 │   ├── frontend_d_question_detail_ko.md
@@ -153,6 +164,7 @@ intel7-piazza-lite/
 │       └── __init__.py    # CLI entrypoint
 ├── data/
 │   └── .gitkeep           # Local fallback folder
+├── run.py                 # Startup script
 ├── pyproject.toml         # UV project configuration & dependencies
 ├── uv.lock                # UV deterministic dependency lockfile
 ├── requirements.txt       # Standard requirements definition
