@@ -1,16 +1,22 @@
 # Intel7 Piazza-Lite
 
-Piazza-Lite is a classroom Q&A and knowledge-sharing forum backend and web application built with FastAPI and SQLite. It operates alongside the classroom chat application (`BambooChat`), referencing existing user accounts without modifying chat tables.
+Piazza-Lite is a classroom Q&A and knowledge-sharing forum backend and web application built with FastAPI and SQLite. It operates alongside the classroom chat application (`BambooChat`), reusing registered user accounts and verifying passwords locally against Argon2id hashes without modifying chat tables.
 
 ---
 
-## Architecture Highlights
+## Architecture & Authentication Highlights
 
-* **Shared SQLite Database**: Connects to the classroom chat SQLite database via `CLASSROOM_DB_PATH` with `PRAGMA journal_mode = WAL` for concurrent read/write operations.
-* **Zero User Creation**: Piazza-Lite treats the chat application as the single source of truth for accounts. Nicknames must exist in the chat database to post questions or answers.
+* **Shared SQLite Database**: Connects to the classroom chat SQLite database via `CLASSROOM_DB_PATH` with `PRAGMA journal_mode = WAL` for concurrent access.
+* **BambooChat Credential Verification**: Reuses existing `users` accounts from BambooChat. Passwords are verified locally using `argon2-cffi` matching BambooChat's normalization (`NFKC` + `casefold`) and Argon2id parameters.
+* **Dedicated Piazza Sessions**: Maintains an isolated `piazza_sessions` table in the shared database storing only SHA-256 hashes of opaque session tokens.
+* **HttpOnly Session Cookies**: Issues a 12-hour `piazza_session` cookie (`HttpOnly=True`, `SameSite="lax"`, `Path="/"`, `Max-Age=43200`).
+* **Session-Derived Authorship**: Write requests (`POST /api/questions`, `POST /api/questions/{id}/answers`) do not accept author fields; authorship is derived strictly from the active session.
+* **Question Ownership Enforcement**: Only the question author can accept an answer solution (`POST /api/questions/{id}/accept/{answer_id}`). Non-owners are rejected with HTTP 403 Forbidden.
 * **Integrated Frontend Serving**: Serves the unified web UI directly through FastAPI on port 8100 at `/`.
-* **Strict DB Presence**: Fails fast on startup if the target database file or `users` table is not found.
-* **CORS Enabled**: Ready for classroom LAN web clients.
+
+> [!WARNING]
+> **Classroom LAN Transport Limitation**:
+> In this classroom MVP deployment, HTTP is used without TLS across the local network. Passwords and session cookies travel unencrypted over the local Wi-Fi / LAN. For production deployment, HTTPS (TLS termination) and `Secure=True` cookies must be enabled.
 
 ---
 
@@ -51,14 +57,10 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8100
 ```
 
 * **Web Application**: [http://127.0.0.1:8100/](http://127.0.0.1:8100/)
-* **Health Check**: [http://127.0.0.1:8100/api/health](http://127.0.0.1:8100/api/health)
+* **Login Page**: [http://127.0.0.1:8100/login.html](http://127.0.0.1:8100/login.html)
+* **Health Check (Public)**: [http://127.0.0.1:8100/api/health](http://127.0.0.1:8100/api/health)
 * **API Interactive Docs**: [http://127.0.0.1:8100/docs](http://127.0.0.1:8100/docs)
 * **LAN Access**: `http://<HOST_IP>:8100/` *(Find your IP using `ipconfig`)*
-
-> **Windows Firewall Note**: If other classroom computers cannot connect, allow Python / port 8100 in Windows Defender Firewall inbound rules:
-> ```powershell
-> New-NetFirewallRule -DisplayName "Piazza-Lite (Port 8100)" -Direction Inbound -LocalPort 8100 -Protocol TCP -Action Allow
-> ```
 
 ---
 
@@ -71,16 +73,23 @@ $env:CLASSROOM_DB_PATH = "E:\_se4nchoi\BambooChatData\chat.db"
 python scripts/seed.py
 ```
 
-*The seed script is idempotent and can be safely executed multiple times without duplicating data.*
+*The seed script is idempotent and resolves existing chat user accounts internally.*
 
 ---
 
 ## 4. Automated Smoke Tests
 
-Verify all 7 API endpoints, author validation, search, error handling, and solution acceptance:
+Verify health check, unauthenticated rejection (401), login sessions, question & answer posting, solution acceptance, non-owner authorization rejection (403), and logout:
 
 ```powershell
-# With the server running on port 8100:
+# Unauthenticated & public endpoint checks:
+python scripts/smoke_test.py
+
+# Full end-to-end authenticated testing with test credentials:
+$env:PIAZZA_TEST_USERNAME = "your_username"
+$env:PIAZZA_TEST_PASSWORD = "your_password"
+$env:PIAZZA_TEST_OTHER_USERNAME = "other_username"
+$env:PIAZZA_TEST_OTHER_PASSWORD = "other_password"
 python scripts/smoke_test.py
 ```
 
@@ -89,58 +98,22 @@ python scripts/smoke_test.py
 ## 5. Web Interface & Endpoints Reference
 
 ### Web Pages
-* **Home / Search**: `/` or `/index.html`
-* **Ask Question**: `/ask.html`
-* **Question Detail & Discussion**: `/question.html?id=<question_id>`
+* **Login**: `/login.html`
+* **Home / Feed**: `/` or `/index.html` (requires login)
+* **Ask Question**: `/ask.html` (requires login)
+* **Question Detail & Discussion**: `/question.html?id=<id>` (requires login)
 
 ### REST API Endpoints
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Health check & database statistics |
-| `GET` | `/api/questions` | List questions (newest-first, supports `?search=`) |
-| `POST` | `/api/questions` | Create question (verifies chat account) |
-| `GET` | `/api/questions/{id}` | Question detail with answers (oldest-first) |
-| `POST` | `/api/questions/{id}/answers` | Post answer (verifies chat account) |
-| `POST` | `/api/questions/{id}/accept/{answer_id}` | Mark answer as accepted solution |
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/health` | No | Health check & database statistics |
+| `POST` | `/api/auth/login` | No | Authenticate user & issue session cookie |
+| `GET` | `/api/auth/me` | Yes | Get current authenticated user info |
+| `POST` | `/api/auth/logout` | No / Yes | Clear session and revoke cookie |
+| `GET` | `/api/questions` | Yes | List questions (newest-first, `?search=`) |
+| `POST` | `/api/questions` | Yes | Create question (payload: `title`, `body`, `tag`) |
+| `GET` | `/api/questions/{id}` | Yes | Detail with answers and `can_accept_answers` |
+| `POST` | `/api/questions/{id}/answers` | Yes | Post answer (payload: `body`) |
+| `POST` | `/api/questions/{id}/accept/{answer_id}` | Yes | Accept answer (Question Owner only) |
 
-For full request/response schemas, refer to [`FRONTEND_HANDOFF.md`](./FRONTEND_HANDOFF.md).
-
----
-
-## 6. Project Structure
-
-```text
-intel7-piazza-lite/
-├── app/
-│   ├── __init__.py
-│   ├── main.py            # FastAPI entrypoint, static frontend mounting, CORS
-│   ├── database.py        # SQLite connection, WAL init, read-only user resolver
-│   ├── schemas.py         # Pydantic contract models (author & nickname alias support)
-│   └── routes.py          # API route handlers
-├── frontend/
-│   ├── index.html         # Home / Search page
-│   ├── ask.html           # Ask Question page
-│   ├── question.html      # Question detail & answers discussion page
-│   ├── css/
-│   │   ├── home.css       # Home/Search stylesheet
-│   │   ├── ask.css        # Ask Question stylesheet
-│   │   ├── common.css     # Common detail styles
-│   │   └── question.css   # Question page styles
-│   └── js/
-│       ├── home.js        # Home listing & debounced search logic
-│       ├── ask.js         # Question submission logic
-│       └── question.js    # Detail rendering, answer posting, solution acceptance
-├── docs/
-│   ├── frontend_b_home_search_ko.md
-│   └── question-page-guide.md
-├── scripts/
-│   ├── seed.py            # Idempotent classroom seed generator
-│   └── smoke_test.py      # E2E automated smoke test suite
-├── data/
-│   └── .gitkeep           # Local fallback folder
-├── .env.example           # Environment template
-├── .gitignore             # Standard Python gitignore
-├── FRONTEND_HANDOFF.md    # Frontend specifications and contract
-├── README.md              # Project runbook
-└── requirements.txt       # Dependencies
-```
+For full schemas and examples, refer to [`FRONTEND_HANDOFF.md`](./FRONTEND_HANDOFF.md).
