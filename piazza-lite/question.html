@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Piazza-lite | 질문 상세</title>
+    <!-- 나중에 공통 CSS로 교체될 예정 -->
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/question.css">
+</head>
+<body>
+
+    <header>
+        <a href="index.html">← 목록으로 돌아가기</a>
+    </header>
+
+    <main id="question-container">
+        <!-- 태그, 제목, 작성자, 질문 내용이 동적으로 삽입될 영역 -->
+        <div id="question-detail">
+            <h2 id="question-title">로딩 중...</h2>
+            <p>작성자: <span id="question-author"></span></p>
+            <div id="question-body"></div>
+        </div>
+
+        <hr>
+
+        <!-- 답변 목록 영역 -->
+        <section id="answers-section">
+            <h3>답변</h3>
+            <div id="answer-list">
+                <!-- 답변들이 동적으로 삽입될 영역 -->
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- 답변 작성 폼 -->
+        <section id="answer-form-section">
+            <h3>답변 작성</h3>
+            <input type="text" id="nickname" placeholder="닉네임">
+            <textarea id="answer-body" placeholder="답변을 입력하세요"></textarea>
+            <button id="submit-answer">답변 등록</button>
+        </section>
+    </main>
+
+    <script src="js/question.js"></script>
+</body>
+</html>
